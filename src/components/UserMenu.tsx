@@ -2,13 +2,16 @@ import React, { useState, useRef, useEffect } from 'react';
 import type { User } from '../types/auth';
 import { AuthService } from '../services/authService';
 import { soundEffects } from '../services/soundEffects';
+import { THEME_COLORS, ThemeService } from '../services/themeService';
 import { 
   Users, 
   LogIn, 
   LogOut, 
   ShieldCheck, 
   BookOpen, 
-  ChevronDown
+  ChevronDown,
+  Palette,
+  Check
 } from 'lucide-react';
 
 interface UserMenuProps {
@@ -25,6 +28,7 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   onNavigateToUserAdmin,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [activeTheme, setActiveTheme] = useState<string>(() => ThemeService.getSelectedTheme());
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -106,6 +110,41 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                   {getRoleBadge(currentUser.role)}
                 </div>
               </div>
+            </div>
+          </div>
+
+          {/* Theme Color Selector */}
+          <div className="p-3 border-b border-slate-100 dark:border-slate-800 space-y-2">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 dark:text-slate-200">
+                <Palette className="w-3.5 h-3.5 text-brand-600" />
+                <span>Màu chủ đạo giao diện</span>
+              </div>
+              <span className="text-[10px] text-slate-400 font-medium">Tự chọn</span>
+            </div>
+
+            <div className="grid grid-cols-6 gap-1.5 pt-1">
+              {THEME_COLORS.map((theme) => {
+                const isSelected = activeTheme === theme.id;
+                return (
+                  <button
+                    key={theme.id}
+                    onClick={() => {
+                      soundEffects.playPop();
+                      ThemeService.applyTheme(theme.id);
+                      setActiveTheme(theme.id);
+                    }}
+                    className={`w-7 h-7 rounded-xl ${theme.badgeBg} flex items-center justify-center transition-all ${
+                      isSelected 
+                        ? 'ring-2 ring-offset-2 ring-slate-900 dark:ring-white scale-110 shadow-md' 
+                        : 'hover:scale-105 opacity-80 hover:opacity-100'
+                    }`}
+                    title={theme.name}
+                  >
+                    {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
+                  </button>
+                );
+              })}
             </div>
           </div>
 

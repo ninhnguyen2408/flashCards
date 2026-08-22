@@ -4,6 +4,7 @@ import type { User } from './types/auth';
 import { AuthService } from './services/authService';
 import { StorageService } from './services/storageService';
 import { ApiService } from './services/apiService';
+import { ThemeService } from './services/themeService';
 import { soundEffects } from './services/soundEffects';
 import { Header } from './components/Header';
 import { DeckList } from './components/DeckList';
@@ -83,6 +84,7 @@ export function App() {
     refreshData(user);
 
     // Theme initialization
+    ThemeService.init();
     const savedTheme = localStorage.getItem('vm_theme') || 'light';
     const darkBool = savedTheme === 'dark';
     setIsDark(darkBool);
