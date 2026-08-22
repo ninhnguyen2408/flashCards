@@ -23,10 +23,13 @@ import { AuthModal } from './components/AuthModal';
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(AuthService.getCurrentUser());
-  const [decks, setDecks] = useState<Deck[]>([]);
-  const [cards, setCards] = useState<Card[]>([]);
-  const [stats, setStats] = useState<UserStats>(StorageService.getStats(currentUser?.id));
-  const [achievements, setAchievements] = useState<Achievement[]>([]);
+  
+  // Instant Initial State (Zero-wait render from local storage cache)
+  const [decks, setDecks] = useState<Deck[]>(() => StorageService.getDecks(currentUser?.id));
+  const [cards, setCards] = useState<Card[]>(() => StorageService.getCards(currentUser?.id));
+  const [stats, setStats] = useState<UserStats>(() => StorageService.getStats(currentUser?.id));
+  const [achievements, setAchievements] = useState<Achievement[]>(() => StorageService.getAchievements(currentUser?.id));
+  
   const [activeTab, setActiveTab] = useState<ActiveTab>('decks');
   const [selectedDeck, setSelectedDeck] = useState<Deck | undefined>(undefined);
   const [isDark, setIsDark] = useState<boolean>(false);
@@ -43,26 +46,34 @@ export function App() {
   const [isImportExportOpen, setIsImportExportOpen] = useState(false);
   const [importExportDeckId, setImportExportDeckId] = useState<string | undefined>(undefined);
 
-  // Check Database connection & reload data
+  // Background Cloud Sync (Stale-While-Revalidate pattern)
   const refreshData = async (user?: User | null) => {
     const activeUser = user !== undefined ? user : currentUser;
-    const isHealthy = await ApiService.checkHealth();
+    
+    try {
+      const isHealthy = await ApiService.checkHealth();
 
-    if (isHealthy) {
-      const [apiDecks, apiCards, apiStats] = await Promise.all([
-        ApiService.getDecks(activeUser?.id),
-        ApiService.getCards(activeUser?.id),
-        ApiService.getStats(activeUser?.id),
-      ]);
-      setDecks(apiDecks);
-      setCards(apiCards);
-      setStats(apiStats);
-      setAchievements(StorageService.getAchievements(activeUser?.id));
-    } else {
+      if (isHealthy) {
+        const [apiDecks, apiCards, apiStats] = await Promise.all([
+          ApiService.getDecks(activeUser?.id),
+          ApiService.getCards(activeUser?.id),
+          ApiService.getStats(activeUser?.id),
+        ]);
+        
+        if (apiDecks && apiDecks.length > 0) setDecks(apiDecks);
+        if (apiCards && apiCards.length > 0) setCards(apiCards);
+        if (apiStats) setStats(apiStats);
+        setAchievements(StorageService.getAchievements(activeUser?.id));
+      } else {
+        setDecks(StorageService.getDecks(activeUser?.id));
+        setCards(StorageService.getCards(activeUser?.id));
+        setStats(StorageService.getStats(activeUser?.id));
+        setAchievements(StorageService.getAchievements(activeUser?.id));
+      }
+    } catch {
+      // Graceful fallback to cached storage
       setDecks(StorageService.getDecks(activeUser?.id));
       setCards(StorageService.getCards(activeUser?.id));
-      setStats(StorageService.getStats(activeUser?.id));
-      setAchievements(StorageService.getAchievements(activeUser?.id));
     }
   };
 
