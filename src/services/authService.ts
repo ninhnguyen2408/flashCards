@@ -10,7 +10,7 @@ const DEFAULT_USERS: User[] = [
     id: 'user-admin-1',
     username: 'admin',
     fullName: 'Quản Trị Viên (Admin)',
-    email: 'admin@vocabmaster.vn',
+    email: 'admin@vocafast.vn',
     role: 'admin',
     avatar: '👑',
     password: 'admin123',
