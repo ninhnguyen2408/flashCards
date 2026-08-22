@@ -85,5 +85,5 @@ export interface StudySessionResult {
   completedAt: string;
 }
 
-export type ActiveTab = 'decks' | 'study' | 'quiz' | 'spelling' | 'match' | 'voice' | 'stats' | 'deck-detail' | 'users';
+export type ActiveTab = 'decks' | 'study' | 'quiz' | 'spelling' | 'match' | 'voice' | 'roleplay' | 'stats' | 'deck-detail' | 'users';
 

@@ -13,6 +13,7 @@ import { QuizGame } from './components/QuizGame';
 import { SpellingGame } from './components/SpellingGame';
 import { MemoryMatchGame } from './components/MemoryMatchGame';
 import { VoicePronounceGame } from './components/VoicePronounceGame';
+import { RoleplayView } from './components/RoleplayView';
 import { StatsView } from './components/StatsView';
 import { UserManagementView } from './components/UserManagementView';
 import { AddEditCardModal } from './components/AddEditCardModal';
@@ -439,7 +440,17 @@ export function App() {
           />
         )}
 
-        {/* TAB 8: STATS & ACHIEVEMENTS */}
+        {/* TAB 8: INTERACTIVE ROLEPLAY CONVERSATION STUDIO */}
+        {activeTab === 'roleplay' && (
+          <RoleplayView
+            onBack={() => setActiveTab('decks')}
+            onEarnXP={(xp) => handleEarnXP(xp)}
+            voiceAccent={stats.voiceAccent}
+            voiceSpeed={stats.voiceSpeed}
+          />
+        )}
+
+        {/* TAB 9: STATS & ACHIEVEMENTS */}
         {activeTab === 'stats' && (
           <StatsView
             stats={stats}

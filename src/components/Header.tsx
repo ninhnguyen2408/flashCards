@@ -14,7 +14,8 @@ import {
   BarChart3,
   Layers,
   ShieldCheck,
-  LogIn
+  LogIn,
+  MessagesSquare
 } from 'lucide-react';
 import { soundEffects } from '../services/soundEffects';
 
@@ -116,7 +117,19 @@ export const Header: React.FC<HeaderProps> = ({
               }`}
             >
               <Mic className="w-4 h-4" />
-              <span>Luyện nói AI</span>
+              <span>Phát âm AI</span>
+            </button>
+
+            <button
+              onClick={() => handleTabClick('roleplay')}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-semibold transition-all ${
+                activeTab === 'roleplay'
+                  ? 'bg-white dark:bg-slate-800 text-brand-600 dark:text-brand-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <MessagesSquare className="w-4 h-4" />
+              <span>Hội thoại AI</span>
             </button>
 
             <button
@@ -256,19 +269,31 @@ export const Header: React.FC<HeaderProps> = ({
 
         <button
           onClick={() => handleTabClick('voice')}
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
             activeTab === 'voice'
               ? 'text-brand-600 dark:text-brand-400 font-bold'
               : 'text-slate-500 dark:text-slate-400 font-medium'
           }`}
         >
           <Mic className="w-5 h-5" />
-          <span className="text-[10px]">Luyện nói</span>
+          <span className="text-[10px]">Phát âm</span>
+        </button>
+
+        <button
+          onClick={() => handleTabClick('roleplay')}
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
+            activeTab === 'roleplay'
+              ? 'text-brand-600 dark:text-brand-400 font-bold'
+              : 'text-slate-500 dark:text-slate-400 font-medium'
+          }`}
+        >
+          <MessagesSquare className="w-5 h-5" />
+          <span className="text-[10px]">Hội thoại</span>
         </button>
 
         <button
           onClick={() => handleTabClick('stats')}
-          className={`flex flex-col items-center gap-1 py-1 px-2.5 rounded-xl transition-all ${
+          className={`flex flex-col items-center gap-1 py-1 px-2 rounded-xl transition-all ${
             activeTab === 'stats'
               ? 'text-brand-600 dark:text-brand-400 font-bold'
               : 'text-slate-500 dark:text-slate-400 font-medium'
