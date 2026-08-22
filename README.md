@@ -60,6 +60,42 @@ Mỗi từ vựng được biên soạn tỉ mỉ với đầy đủ thông tin:
 
 ---
 
+## 🗄️ Kiến Trúc Cơ Sở Dữ Liệu (Database Architecture)
+
+Hệ thống VocaFast vận hành theo mô hình **Hybrid 2 Tầng Database (Local-First Stale-While-Revalidate)**:
+
+### 1. ☁️ Cloud Database (Supabase PostgreSQL Cloud)
+- **URL Host**: `https://yzzfxoefwjrzbzxkqlnn.supabase.co`
+- **Bảng dữ liệu chính**:
+  - `decks`: Lưu 42 bộ thẻ / chủ đề từ vựng.
+  - `cards`: Lưu 1,260+ từ vựng tiếng Anh (word, ipa, meaning, example_en, example_vi, mnemonic, srs_level, interval_days, ease_factor, mastery...).
+  - `users`: Lưu danh sách người dùng (username, password, fullName, role: admin/student, status).
+  - `user_stats`: Lưu thống kê tiến trình học (xp, level, streak, studiedToday, totalCardsReviewed).
+
+### 2. 💻 Local Cache Database (Browser LocalStorage)
+- **Cơ chế**: Lưu dữ liệu đồng bộ tại máy người dùng (`localStorage`), giúp giao diện mở ra **tức thì 0ms (Zero-Wait Rendering)** mà không bị trễ mạng internet. Dữ liệu mới nhất sẽ được đồng bộ ngầm bên dưới từ Supabase Cloud.
+
+---
+
+## 📈 Hệ Thống Tính Level & Điểm Kinh Nghiệm (XP)
+
+Cấp độ người dùng được tự động tính toán dựa trên **Tổng điểm XP tích lũy** theo công thức hàm căn bậc hai (Quadratic XP Curve):
+
+$$\text{Level} = \left\lfloor \sqrt{\frac{\text{Tổng XP}}{50}} \right\rfloor + 1$$
+
+### Bảng mốc XP nâng cấp:
+| Cấp độ (Level) | Tổng XP cần đạt | XP cần cày từ cấp trước |
+| :---: | :---: | :---: |
+| **Level 1** | **0 XP** | *Mới bắt đầu* |
+| **Level 2** | **50 XP** | +50 XP |
+| **Level 3** | **200 XP** | +150 XP |
+| **Level 4** | **450 XP** | +250 XP |
+| **Level 5** | **800 XP** | +350 XP |
+| **Level 6** | **1,250 XP** | +450 XP |
+| **Level 10** | **4,050 XP** | +850 XP |
+
+---
+
 ## 📁 Cấu Trúc Thư Mục Dự Án
 
 ```
