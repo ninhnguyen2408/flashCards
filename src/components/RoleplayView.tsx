@@ -24,7 +24,8 @@ import {
   ChevronRight,
   MessageSquareQuote,
   Eye,
-  EyeOff
+  EyeOff,
+  SkipForward
 } from 'lucide-react';
 
 interface RoleplayViewProps {
@@ -53,7 +54,6 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll chat to bottom
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -62,22 +62,24 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
     scrollToBottom();
   }, [currentTurnIndex, selectedScenario, isListening]);
 
-  // When scenario starts or changes, play first AI dialogue
+  // Start Scenario
   const handleStartScenario = (scenario: RoleplayScenario) => {
     soundEffects.playPop();
     setSelectedScenario(scenario);
-    setCurrentTurnIndex(0);
     setTurnResults({});
     setCurrentTurnError(null);
     setIsCompleted(false);
     setShowHint(false);
 
-    // Speak initial AI turn after brief delay
-    const firstTurn = scenario.dialogue[0];
-    if (firstTurn && firstTurn.speaker === 'ai') {
+    // Initial state: AI speaks turn 0, and currentTurnIndex is set to 1 (User turn)
+    // so that BOTH turn 0 (AI) and turn 1 (User prompt + Mic) are active!
+    if (scenario.dialogue.length > 0 && scenario.dialogue[0].speaker === 'ai') {
+      setCurrentTurnIndex(scenario.dialogue.length > 1 ? 1 : 0);
       setTimeout(() => {
-        playAiTurn(firstTurn.text);
-      }, 500);
+        playAiTurn(scenario.dialogue[0].text);
+      }, 300);
+    } else {
+      setCurrentTurnIndex(0);
     }
   };
 
@@ -114,15 +116,14 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
 
         if (isPassed) {
           soundEffects.playCorrect();
-          // Mini celebration
           confetti({
-            particleCount: 25,
-            spread: 45,
+            particleCount: 30,
+            spread: 50,
             origin: { y: 0.8 },
           });
 
-          // Move to next turn
-          advanceToNextTurn(currentTurnIndex + 1);
+          // Move to next turns
+          advanceConversationAfterUserTurn();
         } else {
           soundEffects.playIncorrect();
         }
@@ -145,36 +146,52 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
     }, 8000);
   };
 
-  const advanceToNextTurn = (nextIdx: number) => {
+  const advanceConversationAfterUserTurn = () => {
     if (!selectedScenario) return;
 
-    if (nextIdx >= selectedScenario.dialogue.length) {
-      // Completed conversation!
+    const nextAiIdx = currentTurnIndex + 1;
+    const nextUserIdx = currentTurnIndex + 2;
+
+    if (nextAiIdx >= selectedScenario.dialogue.length) {
+      // Finished all turns
       setTimeout(() => {
         handleFinishScenario();
-      }, 1000);
+      }, 800);
       return;
     }
 
-    setCurrentTurnIndex(nextIdx);
-    setShowHint(false);
-
-    const nextTurn = selectedScenario.dialogue[nextIdx];
+    const nextTurn = selectedScenario.dialogue[nextAiIdx];
     if (nextTurn && nextTurn.speaker === 'ai') {
-      setTimeout(() => {
-        playAiTurn(nextTurn.text);
-        // After AI finishes speaking, advance to the user's turn
-        advanceToNextTurn(nextIdx + 1);
-      }, 600);
+      // Advance visible chat to include AI turn and next user turn
+      if (nextUserIdx < selectedScenario.dialogue.length) {
+        setCurrentTurnIndex(nextUserIdx);
+      } else {
+        setCurrentTurnIndex(nextAiIdx);
+      }
+
+      setShowHint(false);
+      setTimeout(async () => {
+        await playAiTurn(nextTurn.text);
+        if (nextUserIdx >= selectedScenario.dialogue.length) {
+          handleFinishScenario();
+        }
+      }, 500);
+    } else {
+      setCurrentTurnIndex(nextAiIdx);
     }
+  };
+
+  const handleSkipTurn = () => {
+    soundEffects.playPop();
+    advanceConversationAfterUserTurn();
   };
 
   const handleFinishScenario = () => {
     soundEffects.playVictory();
     setIsCompleted(true);
     confetti({
-      particleCount: 100,
-      spread: 70,
+      particleCount: 120,
+      spread: 80,
       origin: { y: 0.6 },
     });
 
@@ -336,8 +353,10 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
   }
 
   // ================= 2. ACTIVE ROLEPLAY CHAT SCREEN =================
-  const activeTurn = selectedScenario.dialogue[currentTurnIndex];
-  const isUserTurn = activeTurn && activeTurn.speaker === 'user';
+  const activeUserTurn = selectedScenario.dialogue[currentTurnIndex]?.speaker === 'user'
+    ? selectedScenario.dialogue[currentTurnIndex]
+    : selectedScenario.dialogue.find((t, idx) => idx >= currentTurnIndex && t.speaker === 'user');
+
   const progressPercent = Math.min(100, Math.round(((currentTurnIndex + 1) / selectedScenario.dialogue.length) * 100));
 
   return (
@@ -459,23 +478,23 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Interactive Turn Action Deck for User */}
-      {isUserTurn && !isCompleted && (
-        <div className="mt-auto bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border border-slate-200/90 dark:border-slate-800 shadow-xl space-y-3">
+      {/* Interactive Turn Action Deck for User (Always visible when it's user's turn) */}
+      {activeUserTurn && !isCompleted && (
+        <div className="mt-auto bg-white dark:bg-slate-900 rounded-3xl p-4 sm:p-5 border-2 border-brand-500/40 dark:border-brand-500/40 shadow-2xl space-y-3 animate-fade-in">
           
           {/* Target Sentence Preview Card */}
-          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/70 border border-slate-200/60 dark:border-slate-700/60">
-            <div className="flex items-center justify-between mb-1">
-              <span className="text-[10px] font-black uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
-                <span>Đến lượt bạn nói câu này:</span>
+          <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[11px] font-black uppercase tracking-wider text-brand-600 dark:text-brand-400 flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>Đến lượt bạn! Hãy bấm Micro và đọc câu này:</span>
               </span>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
                 <button
                   onClick={() => setShowIpa(!showIpa)}
                   title="Ẩn/Hiện phiên âm IPA"
-                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-200/60 dark:bg-slate-700 flex items-center gap-1"
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white bg-slate-200/70 dark:bg-slate-700 flex items-center gap-1 transition-colors"
                 >
                   {showIpa ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
                   <span>IPA</span>
@@ -484,40 +503,49 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
                 <button
                   onClick={() => setShowHint(!showHint)}
                   title="Xem gợi ý mẹo nói"
-                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-amber-600 bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800 flex items-center gap-1"
+                  className="px-2 py-0.5 rounded-lg text-[10px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 flex items-center gap-1 transition-colors"
                 >
-                  <Lightbulb className="w-3 h-3" />
+                  <Lightbulb className="w-3 h-3 text-amber-500" />
                   <span>Gợi ý</span>
                 </button>
               </div>
             </div>
 
-            <p className="text-sm sm:text-base font-black text-slate-900 dark:text-white">
-              "{activeTurn.text}"
+            {/* Main English Target Sentence */}
+            <p className="text-base sm:text-lg font-black text-slate-900 dark:text-white leading-snug">
+              "{activeUserTurn.text}"
             </p>
 
-            {showIpa && activeTurn.ipa && (
-              <p className="text-xs font-mono text-brand-600 dark:text-brand-400 mt-0.5">
-                {activeTurn.ipa}
+            {/* Meaning in Vietnamese */}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+              👉 Nghĩa: {activeUserTurn.meaningVi}
+            </p>
+
+            {/* IPA Pronunciation */}
+            {showIpa && activeUserTurn.ipa && (
+              <p className="text-xs font-mono font-bold text-brand-600 dark:text-brand-400 mt-1">
+                {activeUserTurn.ipa}
               </p>
             )}
 
-            {showHint && activeTurn.hint && (
-              <div className="mt-2 p-2 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2 font-medium">
+            {/* Hint Box */}
+            {showHint && activeUserTurn.hint && (
+              <div className="mt-2.5 p-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-900 text-xs text-amber-800 dark:text-amber-300 flex items-center gap-2 font-medium">
                 <Lightbulb className="w-4 h-4 text-amber-500 shrink-0" />
-                <span>{activeTurn.hint}</span>
+                <span>{activeUserTurn.hint}</span>
               </div>
             )}
           </div>
 
           {/* Action Controls & Big Microphone Button */}
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
             
             {/* Listen Native Sample Button */}
             <button
-              onClick={() => handleSpeakSample(activeTurn.text)}
+              onClick={() => handleSpeakSample(activeUserTurn.text)}
               disabled={isListening}
-              className="flex items-center gap-2 px-3.5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors"
+              className="flex items-center gap-1.5 px-3 sm:px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-xs transition-colors shrink-0 shadow-sm"
+              title="Nghe phát âm mẫu của câu này"
             >
               <Volume2 className="w-4 h-4 text-indigo-600" />
               <span className="hidden sm:inline">Nghe mẫu</span>
@@ -525,34 +553,32 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
 
             {/* Central Big Mic Record Button */}
             <button
-              onClick={() => handleRecordTurn(activeTurn)}
+              onClick={() => handleRecordTurn(activeUserTurn)}
               disabled={isAiSpeaking}
-              className={`flex-1 py-3 px-4 rounded-2xl font-black text-sm text-white shadow-lg flex items-center justify-center gap-2.5 transition-all ${
+              className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-sm sm:text-base text-white shadow-xl flex items-center justify-center gap-2.5 transition-all ${
                 isListening
-                  ? 'bg-rose-500 animate-pulse ring-4 ring-rose-400/40'
-                  : 'bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-700 hover:to-indigo-700 shadow-brand-500/25 active:scale-98'
+                  ? 'bg-rose-500 animate-pulse ring-4 ring-rose-400/40 scale-102'
+                  : 'bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 hover:from-brand-700 hover:to-purple-700 shadow-brand-500/30 active:scale-98'
               }`}
             >
               <Mic className={`w-5 h-5 ${isListening ? 'animate-bounce' : ''}`} />
-              <span>{isListening ? 'Đang lắng nghe... Hãy nói to!' : 'Bấm Micro Để Trả Lời'}</span>
+              <span>{isListening ? 'Đang lắng nghe giọng bạn... Hãy nói to!' : '🎙️ BẤM MICRO ĐỂ NÓI (TRẢ LỜI AI)'}</span>
             </button>
 
             {/* Skip Turn Button */}
             <button
-              onClick={() => {
-                soundEffects.playPop();
-                advanceToNextTurn(currentTurnIndex + 1);
-              }}
-              title="Bỏ qua lượt này"
-              className="px-3.5 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 font-bold text-xs transition-colors"
+              onClick={handleSkipTurn}
+              title="Bỏ qua câu này"
+              className="flex items-center gap-1 px-3 sm:px-4 py-3 rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 font-bold text-xs transition-colors shrink-0 shadow-sm"
             >
-              <span>Bỏ qua</span>
+              <SkipForward className="w-4 h-4" />
+              <span className="hidden sm:inline">Bỏ qua</span>
             </button>
           </div>
 
           {/* Error / Feedback Message */}
           {currentTurnError && (
-            <p className="text-center text-xs font-semibold text-rose-500 animate-fade-in">
+            <p className="text-center text-xs font-bold text-rose-500 animate-fade-in">
               {currentTurnError}
             </p>
           )}
