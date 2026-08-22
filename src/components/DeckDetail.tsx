@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Card, Deck } from '../types/flashcard';
+import { DeckIcon } from './DeckIcon';
 import { 
   ArrowLeft, 
   Plus, 
@@ -105,8 +106,9 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white p-6 sm:p-8 shadow-xl border border-indigo-900/40">
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 text-brand-300 border border-white/10">
-              <span>{deck.category.toUpperCase()}</span>
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 text-brand-300 border border-white/10">
+              <DeckIcon name={deck.icon} category={deck.category} className="w-4 h-4 text-brand-300" />
+              <span>{deck.category.replace('_', ' ').toUpperCase()}</span>
             </div>
             <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">{deck.title}</h1>
             <p className="text-slate-300 text-sm max-w-xl">{deck.description}</p>

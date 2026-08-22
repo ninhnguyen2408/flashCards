@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import type { Card, Deck, UserStats } from '../types/flashcard';
+import { DeckIcon } from './DeckIcon';
 import { 
   Plus, 
   Search, 
@@ -10,10 +11,7 @@ import {
   ArrowRight, 
   Trash2, 
   Edit3,
-  BrainCircuit,
-  GraduationCap,
-  Briefcase,
-  Plane
+  BrainCircuit
 } from 'lucide-react';
 import { soundEffects } from '../services/soundEffects';
 import { isCardDue } from '../services/srsAlgorithm';
@@ -64,19 +62,6 @@ export const DeckList: React.FC<DeckListProps> = ({
       (d.topic && d.topic.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchCategory && matchSearch;
   });
-
-  const getDeckIcon = (_iconName: string, category: string) => {
-    switch (category) {
-      case 'people_feelings': return <Sparkles className="w-6 h-6 text-white" />;
-      case 'food_dining': return <BookOpen className="w-6 h-6 text-white" />;
-      case 'daily_shopping': return <Briefcase className="w-6 h-6 text-white" />;
-      case 'nature_environment': return <Sparkles className="w-6 h-6 text-white" />;
-      case 'education_career': return <GraduationCap className="w-6 h-6 text-white" />;
-      case 'places_services': return <Plane className="w-6 h-6 text-white" />;
-      case 'leisure_festivals': return <BrainCircuit className="w-6 h-6 text-white" />;
-      default: return <BookOpen className="w-6 h-6 text-white" />;
-    }
-  };
 
 
   return (
@@ -222,7 +207,7 @@ export const DeckList: React.FC<DeckListProps> = ({
                   <div className="flex items-start justify-between gap-4 mb-4">
                     <div className="flex items-center gap-3.5">
                       <div className={`w-12 h-12 rounded-2xl bg-gradient-to-tr ${deck.color || 'from-blue-500 to-indigo-600'} flex items-center justify-center shadow-lg shadow-brand-500/20 group-hover:scale-105 transition-transform`}>
-                        {getDeckIcon(deck.icon, deck.category)}
+                        <DeckIcon name={deck.icon} category={deck.category} className="w-6 h-6 text-white" />
                       </div>
                       <div>
                         <span className="text-[11px] font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
