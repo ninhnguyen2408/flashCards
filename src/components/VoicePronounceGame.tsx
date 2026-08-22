@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { SpeechService } from '../services/speechService';
 import { soundEffects } from '../services/soundEffects';
+import { DeckSelectDropdown } from './DeckSelectDropdown';
 import confetti from 'canvas-confetti';
 
 
@@ -63,8 +64,21 @@ export const VoicePronounceGame: React.FC<VoicePronounceGameProps> = ({
 
   const currentCard = practiceCards[currentIndex];
 
+  const stopFnRef = React.useRef<(() => void) | null>(null);
+
   const handleStartRecord = () => {
-    if (!currentCard || isListening) return;
+    if (!currentCard) return;
+
+    // Toggle OFF if already recording!
+    if (isListening) {
+      if (stopFnRef.current) {
+        stopFnRef.current();
+        stopFnRef.current = null;
+      }
+      SpeechService.stopListening();
+      setIsListening(false);
+      return;
+    }
 
     setErrorMsg(null);
     setResult(null);
@@ -73,6 +87,7 @@ export const VoicePronounceGame: React.FC<VoicePronounceGameProps> = ({
       currentCard.word,
       (score, transcript, isCorrect) => {
         setIsListening(false);
+        stopFnRef.current = null;
         setResult({ score, transcript, isCorrect });
 
         if (isCorrect) {
@@ -85,6 +100,7 @@ export const VoicePronounceGame: React.FC<VoicePronounceGameProps> = ({
       },
       (err) => {
         setIsListening(false);
+        stopFnRef.current = null;
         setErrorMsg(err);
       },
       () => {
@@ -92,11 +108,15 @@ export const VoicePronounceGame: React.FC<VoicePronounceGameProps> = ({
       }
     );
 
+    stopFnRef.current = stopFn;
+
     // Safety timeout
     setTimeout(() => {
-      if (isListening) {
+      if (stopFnRef.current === stopFn) {
         stopFn();
+        SpeechService.stopListening();
         setIsListening(false);
+        stopFnRef.current = null;
       }
     }, 6000);
   };
@@ -129,14 +149,12 @@ export const VoicePronounceGame: React.FC<VoicePronounceGameProps> = ({
           <span>Thoát</span>
         </button>
 
-        <select
-          value={activeDeckId}
-          onChange={(e) => setActiveDeckId(e.target.value)}
-          className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-300"
-        >
-          <option value="all">Tất cả bộ thẻ</option>
-          {decks.map(d => <option key={d.id} value={d.id}>{d.title}</option>)}
-        </select>
+        <DeckSelectDropdown
+          decks={decks}
+          activeDeckId={activeDeckId}
+          onSelectDeck={setActiveDeckId}
+          disabled={!isFinished && currentIndex > 0}
+        />
 
         <span className="text-xs font-bold text-slate-500">
           Từ {currentIndex + 1} / {practiceCards.length}

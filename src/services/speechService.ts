@@ -72,10 +72,23 @@ export class SpeechService {
     });
   }
 
-  // Stop speech
+  // Stop speech synthesis
   public static stop() {
     if (this.synth) {
       this.synth.cancel();
+    }
+  }
+
+  // Stop speech recognition microphone
+  public static stopListening() {
+    if (this.recognitionInstance) {
+      try {
+        this.recognitionInstance.abort();
+        this.recognitionInstance.stop();
+      } catch {
+        // ignore
+      }
+      this.recognitionInstance = null;
     }
   }
 

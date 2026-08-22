@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Card, SRSRating } from '../types/flashcard';
 import { 
   Volume2, 
@@ -29,12 +29,27 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
   const [isListening, setIsListening] = useState(false);
   const [voiceResult, setVoiceResult] = useState<{ score: number; transcript: string; isCorrect: boolean } | null>(null);
   const [voiceError, setVoiceError] = useState<string | null>(null);
+  
+  const stopFnRef = useRef<(() => void) | null>(null);
 
-  // Auto-reset flip state when card changes
+  // Auto-reset flip state and stop mic when card changes or unmounts
   useEffect(() => {
     setIsFlipped(false);
     setVoiceResult(null);
     setVoiceError(null);
+    if (stopFnRef.current) {
+      stopFnRef.current();
+      stopFnRef.current = null;
+    }
+    SpeechService.stopListening();
+    setIsListening(false);
+
+    return () => {
+      if (stopFnRef.current) {
+        stopFnRef.current();
+      }
+      SpeechService.stopListening();
+    };
   }, [card.id]);
 
   // Keyboard shortcut listener
@@ -84,7 +99,17 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
 
   const handleVoiceTest = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (isListening) return;
+
+    // Toggle OFF if microphone is currently recording!
+    if (isListening) {
+      if (stopFnRef.current) {
+        stopFnRef.current();
+        stopFnRef.current = null;
+      }
+      SpeechService.stopListening();
+      setIsListening(false);
+      return;
+    }
 
     setVoiceError(null);
     setVoiceResult(null);
@@ -93,6 +118,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
       card.word,
       (score, transcript, isCorrect) => {
         setIsListening(false);
+        stopFnRef.current = null;
         setVoiceResult({ score, transcript, isCorrect });
         if (isCorrect) {
           soundEffects.playCorrect();
@@ -102,6 +128,7 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
       },
       (err) => {
         setIsListening(false);
+        stopFnRef.current = null;
         setVoiceError(err);
       },
       () => {
@@ -109,11 +136,15 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
       }
     );
 
-    // Auto cancel after 5 seconds if no speech
+    stopFnRef.current = stopFn;
+
+    // Safety timeout: Auto cancel after 5 seconds if user stops speaking
     setTimeout(() => {
-      if (isListening) {
+      if (stopFnRef.current === stopFn) {
         stopFn();
+        SpeechService.stopListening();
         setIsListening(false);
+        stopFnRef.current = null;
       }
     }, 5000);
   };

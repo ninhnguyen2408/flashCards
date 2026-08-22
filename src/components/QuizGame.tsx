@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { SpeechService } from '../services/speechService';
 import { soundEffects } from '../services/soundEffects';
+import { DeckSelectDropdown } from './DeckSelectDropdown';
 import confetti from 'canvas-confetti';
 
 
@@ -46,6 +47,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
   const [isAnswered, setIsAnswered] = useState(false);
   const [score, setScore] = useState(0);
+  const [correctCount, setCorrectCount] = useState(0);
   const [streak, setStreak] = useState(0);
   const [maxStreak, setMaxStreak] = useState(0);
   const [timeLeft, setTimeLeft] = useState(15);
@@ -103,6 +105,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
     setSelectedAnswer(null);
     setIsAnswered(false);
     setScore(0);
+    setCorrectCount(0);
     setStreak(0);
     setMaxStreak(0);
     setTimeLeft(15);
@@ -147,6 +150,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
 
     if (isCorrect) {
       soundEffects.playCorrect();
+      setCorrectCount(prev => prev + 1);
       const bonusStreak = streak >= 3 ? 15 : 10;
       setScore(prev => prev + bonusStreak);
       setStreak(prev => {
@@ -222,18 +226,13 @@ export const QuizGame: React.FC<QuizGameProps> = ({
           <span>Thoát</span>
         </button>
 
-        {/* Deck selector */}
-        <select
-          value={activeDeckId}
-          onChange={(e) => setActiveDeckId(e.target.value)}
+        {/* Custom Deck selector */}
+        <DeckSelectDropdown
+          decks={decks}
+          activeDeckId={activeDeckId}
+          onSelectDeck={setActiveDeckId}
           disabled={!isFinished && currentIndex > 0}
-          className="text-xs font-semibold bg-slate-100 dark:bg-slate-800 rounded-xl px-3 py-2 text-slate-700 dark:text-slate-300 focus:outline-none"
-        >
-          <option value="all">Tất cả bộ thẻ</option>
-          {decks.map(d => (
-            <option key={d.id} value={d.id}>{d.title}</option>
-          ))}
-        </select>
+        />
 
         {/* Score & Streak */}
         <div className="flex items-center gap-2">
@@ -381,7 +380,7 @@ export const QuizGame: React.FC<QuizGameProps> = ({
             <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700">
               <span className="text-xs text-slate-400 font-bold block">Tỷ lệ chính xác</span>
               <span className="text-2xl font-black text-emerald-500">
-                {Math.round((score / (questions.length * 10 || 1)) * 100)}%
+                {Math.min(100, Math.round((correctCount / (questions.length || 1)) * 100))}%
               </span>
             </div>
           </div>
