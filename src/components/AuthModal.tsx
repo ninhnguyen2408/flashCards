@@ -89,7 +89,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Tài Khoản VocabMaster</h3>
+              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white">Tài Khoản VocaFast</h3>
               <p className="text-xs text-slate-500">Đăng nhập hoặc đăng ký tài khoản học viên</p>
             </div>
           </div>

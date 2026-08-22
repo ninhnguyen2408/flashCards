@@ -30,11 +30,14 @@ interface DeckListProps {
 }
 
 const CATEGORY_TABS = [
-  { id: 'all', label: 'Tất cả' },
-  { id: 'oxford', label: 'Oxford 3000' },
-  { id: 'toeic', label: 'TOEIC' },
-  { id: 'ielts', label: 'IELTS' },
-  { id: 'travel', label: 'Giao tiếp' },
+  { id: 'all', label: 'Tất cả 42 Chủ đề' },
+  { id: 'people_feelings', label: 'Con người & Cảm xúc' },
+  { id: 'food_dining', label: 'Ẩm thực & Nhà bếp' },
+  { id: 'daily_shopping', label: 'Đời sống & Mua sắm' },
+  { id: 'nature_environment', label: 'Thiên nhiên & Môi trường' },
+  { id: 'education_career', label: 'Học tập & Công việc' },
+  { id: 'places_services', label: 'Địa điểm & Dịch vụ' },
+  { id: 'leisure_festivals', label: 'Giải trí & Lễ hội' },
   { id: 'custom', label: 'Tự tạo' },
 ];
 
@@ -57,22 +60,27 @@ export const DeckList: React.FC<DeckListProps> = ({
   const filteredDecks = decks.filter(d => {
     const matchCategory = activeCategory === 'all' || d.category === activeCategory;
     const matchSearch = d.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.description.toLowerCase().includes(searchQuery.toLowerCase());
+      d.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (d.topic && d.topic.toLowerCase().includes(searchQuery.toLowerCase()));
     return matchCategory && matchSearch;
   });
 
   const getDeckIcon = (_iconName: string, category: string) => {
     switch (category) {
-      case 'toeic': return <Briefcase className="w-6 h-6 text-white" />;
-      case 'ielts': return <GraduationCap className="w-6 h-6 text-white" />;
-      case 'travel': return <Plane className="w-6 h-6 text-white" />;
+      case 'people_feelings': return <Sparkles className="w-6 h-6 text-white" />;
+      case 'food_dining': return <BookOpen className="w-6 h-6 text-white" />;
+      case 'daily_shopping': return <Briefcase className="w-6 h-6 text-white" />;
+      case 'nature_environment': return <Sparkles className="w-6 h-6 text-white" />;
+      case 'education_career': return <GraduationCap className="w-6 h-6 text-white" />;
+      case 'places_services': return <Plane className="w-6 h-6 text-white" />;
+      case 'leisure_festivals': return <BrainCircuit className="w-6 h-6 text-white" />;
       default: return <BookOpen className="w-6 h-6 text-white" />;
     }
   };
 
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 py-6 space-y-8">
       
       {/* Hero Learning Dashboard Banner */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-700 text-white p-6 sm:p-10 shadow-2xl shadow-brand-500/20">

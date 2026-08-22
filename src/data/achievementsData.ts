@@ -59,7 +59,7 @@ export const INITIAL_ACHIEVEMENTS: Achievement[] = [
   {
     id: 'ach-level-5',
     title: 'Học Giả Xuất Sắc',
-    description: 'Đạt cấp độ Level 5 trong VocabMaster.',
+    description: 'Đạt cấp độ Level 5 trong VocaFast.',
     icon: 'Crown',
     category: 'level',
     requirement: 5,

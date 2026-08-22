@@ -4,6 +4,24 @@ export type MasteryLevel = 'new' | 'learning' | 'reviewing' | 'mastered';
 
 export type SRSRating = 'again' | 'hard' | 'good' | 'easy';
 
+export type CEFRLevel = 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
+
+export type DeckCategory = 
+  | 'people_feelings'
+  | 'food_dining'
+  | 'daily_shopping'
+  | 'nature_environment'
+  | 'education_career'
+  | 'places_services'
+  | 'leisure_festivals'
+  | 'oxford' 
+  | 'toeic' 
+  | 'ielts' 
+  | 'travel' 
+  | 'business' 
+  | 'cefr' 
+  | 'custom';
+
 export interface Card {
   id: string;
   deckId: string;
@@ -17,6 +35,9 @@ export interface Card {
   mnemonic?: string;
   imageUrl?: string;
   audioUrl?: string;
+  collocations?: string[];
+  topic?: string;
+  cefrLevel?: CEFRLevel;
   // SRS state
   srsLevel: number; // 0 = new, 1..5
   intervalDays: number;
@@ -34,7 +55,9 @@ export interface Deck {
   authorName?: string;
   title: string;
   description: string;
-  category: 'oxford' | 'toeic' | 'ielts' | 'travel' | 'business' | 'custom';
+  category: DeckCategory;
+  topic?: string;
+  cefrLevel?: CEFRLevel;
   icon: string;
   color: string;
   isCustom?: boolean;

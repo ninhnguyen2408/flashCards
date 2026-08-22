@@ -68,7 +68,7 @@ export const StatsView: React.FC<StatsViewProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 py-6 space-y-8">
       
       {/* Title */}
       <div>

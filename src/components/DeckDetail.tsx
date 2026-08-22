@@ -69,7 +69,7 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 py-6 space-y-6">
       
       {/* Top Navigation */}
       <div className="flex items-center justify-between">
@@ -242,9 +242,16 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({
                         <Volume2 className="w-4 h-4" />
                       </button>
                     </div>
-                    <span className="text-xs font-serif text-slate-500 dark:text-slate-400 font-medium">
-                      {c.ipa}
-                    </span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-xs font-serif text-slate-500 dark:text-slate-400 font-medium">
+                        {c.ipa}
+                      </span>
+                      {c.cefrLevel && (
+                        <span className="px-2 py-0.5 rounded text-[10px] font-black bg-brand-100 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border border-brand-300">
+                          CEFR {c.cefrLevel}
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase ${
@@ -264,6 +271,17 @@ export const DeckDetail: React.FC<DeckDetailProps> = ({
                 <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2">
                   {c.meaning}
                 </p>
+
+                {/* Collocations */}
+                {c.collocations && c.collocations.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-2">
+                    {c.collocations.map((col, idx) => (
+                      <span key={idx} className="px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 text-[11px] font-bold border border-indigo-200/60 dark:border-indigo-800/60">
+                        {col}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* Example sentence */}
                 {c.exampleEn && (

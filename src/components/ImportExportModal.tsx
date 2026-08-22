@@ -38,7 +38,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `VocabMaster_Backup_${new Date().toISOString().split('T')[0]}.json`;
+    link.download = `VocaFast_Backup_${new Date().toISOString().split('T')[0]}.json`;
     link.click();
     URL.revokeObjectURL(url);
     setMessage({ type: 'success', text: 'Đã xuất file sao lưu JSON thành công!' });
@@ -57,7 +57,7 @@ export const ImportExportModal: React.FC<ImportExportModalProps> = ({
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `VocabMaster_Cards_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `VocaFast_Cards_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
     URL.revokeObjectURL(url);
     setMessage({ type: 'success', text: 'Đã xuất danh sách từ vựng ra file CSV thành công!' });

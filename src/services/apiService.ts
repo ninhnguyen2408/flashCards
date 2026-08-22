@@ -304,7 +304,7 @@ export class ApiService {
       if (deckId) {
         query = query.eq('deck_id', deckId);
       } else if (userId) {
-        query = query.or(`user_id.eq.${userId},user_id.is.null`);
+        query = query.or(`user_id.eq.${userId},user_id.is.null,user_id.eq.user-teacher-1`);
       }
 
       const { data, error } = await query;
@@ -322,6 +322,8 @@ export class ApiService {
           mnemonic: c.mnemonic,
           imageUrl: c.image_url,
           audioUrl: c.audio_url,
+          collocations: Array.isArray(c.collocations) ? c.collocations : undefined,
+          cefrLevel: c.cefr_level || c.cefrLevel,
           srsLevel: c.srs_level || 0,
           intervalDays: c.interval_days || 0,
           easeFactor: c.ease_factor || 2.5,

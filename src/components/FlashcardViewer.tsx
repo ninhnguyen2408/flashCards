@@ -244,6 +244,20 @@ export const FlashcardViewer: React.FC<FlashcardViewerProps> = ({
                 </p>
               </div>
 
+              {/* Collocations */}
+              {card.collocations && card.collocations.length > 0 && (
+                <div>
+                  <span className="text-[11px] uppercase font-bold text-slate-400 tracking-wider block mb-1">Cụm từ thường đi kèm (Collocations)</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {card.collocations.map((col, idx) => (
+                      <span key={idx} className="px-2.5 py-1 rounded-xl bg-indigo-50 dark:bg-indigo-950/80 text-indigo-700 dark:text-indigo-300 text-xs font-bold border border-indigo-200/70 dark:border-indigo-800/70">
+                        {col}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Example sentence */}
               {card.exampleEn && (
                 <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">

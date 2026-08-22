@@ -219,7 +219,7 @@ export const RoleplayView: React.FC<RoleplayViewProps> = ({
   // ================= 1. SCENARIO SELECTION SCREEN =================
   if (!selectedScenario) {
     return (
-      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8 space-y-6">
+      <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-8 space-y-6">
         
         {/* Header Banner */}
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-brand-600 via-indigo-600 to-purple-600 p-6 sm:p-8 text-white shadow-xl shadow-brand-500/15">

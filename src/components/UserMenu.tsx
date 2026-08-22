@@ -48,22 +48,22 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   const getRoleBadge = (role: User['role']) => {
     if (role === 'admin') {
       return (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-1">
-          <ShieldCheck className="w-3 h-3 text-purple-600" />
-          <span>Admin (.env)</span>
+        <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 dark:bg-purple-950 dark:text-purple-300 border border-purple-200 dark:border-purple-800 flex items-center gap-0.5 whitespace-nowrap">
+          <ShieldCheck className="w-2.5 h-2.5 text-purple-600" />
+          <span>Admin</span>
         </span>
       );
     }
     return (
-      <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1">
-        <BookOpen className="w-3 h-3 text-emerald-600" />
+      <span className="px-1.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-0.5 whitespace-nowrap">
+        <BookOpen className="w-2.5 h-2.5 text-emerald-600" />
         <span>Học viên</span>
       </span>
     );
   };
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative shrink-0" ref={menuRef}>
       
       {/* Trigger Button */}
       <button
@@ -71,22 +71,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           soundEffects.playPop();
           setIsOpen(!isOpen);
         }}
-        className="flex items-center gap-2 p-1.5 sm:px-3 sm:py-1.5 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:border-brand-400 dark:hover:border-brand-500 transition-all shadow-sm"
+        className="flex items-center gap-2 p-1.5 sm:px-2.5 sm:py-1 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200/80 dark:border-slate-700 hover:border-brand-400 dark:hover:border-brand-500 transition-all shadow-sm shrink-0"
       >
-        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center text-sm shadow-sm">
+        <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center text-xs shadow-sm shrink-0">
           {currentUser.avatar || (currentUser.role === 'admin' ? '👑' : '🎒')}
         </div>
 
-        <div className="hidden sm:flex flex-col text-left">
-          <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-[120px]">
+        <div className="hidden sm:flex items-center gap-1.5 text-left shrink-0">
+          <span className="text-xs font-extrabold text-slate-900 dark:text-white truncate max-w-[100px] whitespace-nowrap">
             {currentUser.fullName}
           </span>
-          <div className="flex items-center mt-0.5">
-            {getRoleBadge(currentUser.role)}
-          </div>
+          {getRoleBadge(currentUser.role)}
         </div>
 
-        <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block" />
+        <ChevronDown className="w-3.5 h-3.5 text-slate-400 hidden sm:block shrink-0" />
       </button>
 
       {/* Dropdown Menu */}

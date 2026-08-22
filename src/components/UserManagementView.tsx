@@ -114,7 +114,7 @@ export const UserManagementView: React.FC<UserManagementViewProps> = ({
   const adminCount = users.filter(u => u.role === 'admin').length;
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in">
+    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 py-8 animate-fade-in">
       
       {/* Top Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-slate-200 dark:border-slate-800">

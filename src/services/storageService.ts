@@ -35,7 +35,16 @@ export class StorageService {
         this.saveDecks(INITIAL_DECKS, uid);
         return INITIAL_DECKS;
       }
-      return JSON.parse(data);
+      const existing: Deck[] = JSON.parse(data);
+      const existingIds = new Set(existing.map((d) => d.id));
+      const missingDefaults = INITIAL_DECKS.filter((d) => !existingIds.has(d.id));
+
+      if (missingDefaults.length > 0) {
+        const merged = [...existing, ...missingDefaults];
+        this.saveDecks(merged, uid);
+        return merged;
+      }
+      return existing;
     } catch {
       return INITIAL_DECKS;
     }
@@ -56,7 +65,16 @@ export class StorageService {
         this.saveCards(INITIAL_CARDS, uid);
         return INITIAL_CARDS;
       }
-      return JSON.parse(data);
+      const existing: Card[] = JSON.parse(data);
+      const existingIds = new Set(existing.map((c) => c.id));
+      const missingCards = INITIAL_CARDS.filter((c) => !existingIds.has(c.id));
+
+      if (missingCards.length > 0) {
+        const merged = [...existing, ...missingCards];
+        this.saveCards(merged, uid);
+        return merged;
+      }
+      return existing;
     } catch {
       return INITIAL_CARDS;
     }
