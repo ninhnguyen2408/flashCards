@@ -1,0 +1,17 @@
+{
+  "name": "VocabMaster - Học Tiếng Anh Flashcard",
+  "short_name": "VocabMaster",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4f46e5",
+  "description": "Ứng dụng học từ vựng Flashcard tiếng Anh thông minh với Spaced Repetition",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -1,0 +1,68 @@
+import type { Achievement } from '../types/flashcard';
+
+
+export const INITIAL_ACHIEVEMENTS: Achievement[] = [
+  {
+    id: 'ach-first-step',
+    title: 'Bước Chân Đầu Tiên',
+    description: 'Hoàn thành lượt học flashcard đầu tiên.',
+    icon: 'Footprints',
+    category: 'cards',
+    requirement: 1,
+    unlocked: false,
+  },
+  {
+    id: 'ach-streak-3',
+    title: 'Ngọn Lửa Bền Bỉ',
+    description: 'Duy trì chuỗi học 3 ngày liên tiếp.',
+    icon: 'Flame',
+    category: 'streak',
+    requirement: 3,
+    unlocked: false,
+  },
+  {
+    id: 'ach-streak-7',
+    title: 'Chiến Binh Kỷ Luật',
+    description: 'Duy trì chuỗi học 7 ngày liên tục không nghỉ.',
+    icon: 'Zap',
+    category: 'streak',
+    requirement: 7,
+    unlocked: false,
+  },
+  {
+    id: 'ach-vocab-50',
+    title: 'Kho Từ Vựng Nhỏ',
+    description: 'Ôn tập được 50 lượt từ vựng.',
+    icon: 'BookOpen',
+    category: 'cards',
+    requirement: 50,
+    unlocked: false,
+  },
+  {
+    id: 'ach-vocab-master-10',
+    title: 'Bậc Thầy Ghi Nhớ',
+    description: 'Luyện thành thạo 10 từ vựng (Mastered).',
+    icon: 'Award',
+    category: 'cards',
+    requirement: 10,
+    unlocked: false,
+  },
+  {
+    id: 'ach-quiz-perfect',
+    title: 'Xạ Thủ Trắc Nghiệm',
+    description: 'Đạt điểm tuyệt đối 100% trong một ván Quiz.',
+    icon: 'Target',
+    category: 'quiz',
+    requirement: 1,
+    unlocked: false,
+  },
+  {
+    id: 'ach-level-5',
+    title: 'Học Giả Xuất Sắc',
+    description: 'Đạt cấp độ Level 5 trong VocabMaster.',
+    icon: 'Crown',
+    category: 'level',
+    requirement: 5,
+    unlocked: false,
+  },
+];

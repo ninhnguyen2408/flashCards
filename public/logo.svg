@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="50%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#3730a3" />
+    </linearGradient>
+    <linearGradient id="cardGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" />
+      <stop offset="100%" stop-color="#e0e7ff" />
+    </linearGradient>
+    <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fbbf24" />
+      <stop offset="100%" stop-color="#f59e0b" />
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#1e1b4b" flood-opacity="0.3" />
+    </filter>
+  </defs>
+  
+  <rect width="100" height="100" rx="24" fill="url(#bgGrad)" />
+  
+  <!-- Back Card -->
+  <rect x="22" y="24" width="46" height="56" rx="8" fill="url(#cardGrad)" opacity="0.4" transform="rotate(-12 45 52)" />
+  
+  <!-- Middle Card -->
+  <rect x="28" y="22" width="46" height="56" rx="8" fill="url(#cardGrad)" opacity="0.7" transform="rotate(6 51 50)" />
+  
+  <!-- Front Main Card -->
+  <rect x="27" y="22" width="46" height="56" rx="8" fill="url(#cardGrad)" filter="url(#shadow)" />
+  
+  <!-- Text lines on card -->
+  <rect x="34" y="32" width="22" height="5" rx="2.5" fill="#4f46e5" />
+  <rect x="34" y="42" width="32" height="3" rx="1.5" fill="#818cf8" />
+  <rect x="34" y="48" width="26" height="3" rx="1.5" fill="#818cf8" opacity="0.6" />
+  
+  <!-- Star Sparkle -->
+  <path d="M68 22L70.5 28.5L77 31L70.5 33.5L68 40L65.5 33.5L59 31L65.5 28.5Z" fill="url(#accentGrad)" />
+  <!-- Small Star -->
+  <circle cx="28" cy="72" r="3" fill="#38bdf8" />
+  <circle cx="74" cy="68" r="2.5" fill="#a78bfa" />
+</svg>
