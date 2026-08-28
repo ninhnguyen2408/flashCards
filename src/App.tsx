@@ -4,6 +4,7 @@ import type { User } from './types/auth';
 import { AuthService } from './services/authService';
 import { StorageService } from './services/storageService';
 import { ApiService } from './services/apiService';
+import { supabase } from './services/supabaseClient';
 import { ThemeService } from './services/themeService';
 import { soundEffects } from './services/soundEffects';
 import { Header } from './components/Header';
@@ -20,7 +21,10 @@ import { UserManagementView } from './components/UserManagementView';
 import { AddEditCardModal } from './components/AddEditCardModal';
 import { AddEditDeckModal } from './components/AddEditDeckModal';
 import { ImportExportModal } from './components/ImportExportModal';
+import { TopicSelectionModal } from './components/TopicSelectionModal';
 import { AuthModal } from './components/AuthModal';
+
+const DEFAULT_STARTER_TOPIC_IDS = ['deck-family', 'deck-food-dishes', 'deck-clothes', 'deck-travel', 'deck-routines', 'deck-school'];
 
 export function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(AuthService.getCurrentUser());
@@ -30,6 +34,10 @@ export function App() {
   const [cards, setCards] = useState<Card[]>(() => StorageService.getCards(currentUser?.id));
   const [stats, setStats] = useState<UserStats>(() => StorageService.getStats(currentUser?.id));
   const [achievements, setAchievements] = useState<Achievement[]>(() => StorageService.getAchievements(currentUser?.id));
+  const [selectedDeckIds, setSelectedDeckIds] = useState<string[]>(() => {
+    const saved = StorageService.getSelectedDeckIds(currentUser?.id);
+    return saved !== null ? saved : DEFAULT_STARTER_TOPIC_IDS;
+  });
   
   const [activeTab, setActiveTab] = useState<ActiveTab>('decks');
   const [selectedDeck, setSelectedDeck] = useState<Deck | undefined>(undefined);
@@ -37,6 +45,8 @@ export function App() {
 
   // Modals state
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isTopicModalOpen, setIsTopicModalOpen] = useState(false);
+  const [isFirstTimeOnboarding, setIsFirstTimeOnboarding] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<Card | null>(null);
   const [cardModalDeckId, setCardModalDeckId] = useState<string>('');
@@ -51,6 +61,19 @@ export function App() {
   const refreshData = async (user?: User | null) => {
     const activeUser = user !== undefined ? user : currentUser;
     
+    // Check and load selected topics
+    const savedTopicIds = StorageService.getSelectedDeckIds(activeUser?.id);
+    if (savedTopicIds === null) {
+      // First time user onboarding
+      if (activeUser) {
+        setIsFirstTimeOnboarding(true);
+        setIsTopicModalOpen(true);
+      }
+      setSelectedDeckIds(DEFAULT_STARTER_TOPIC_IDS);
+    } else {
+      setSelectedDeckIds(savedTopicIds);
+    }
+
     try {
       const isHealthy = await ApiService.checkHealth();
 
@@ -83,6 +106,34 @@ export function App() {
     setCurrentUser(user);
     refreshData(user);
 
+    // Check if user landed from Email Confirmation link
+    const checkEmailConfirmation = async () => {
+      if (window.location.hash.includes('access_token') || window.location.search.includes('code')) {
+        const confirmedUser = await ApiService.syncConfirmedAuthSession();
+        if (confirmedUser) {
+          soundEffects.playVictory();
+          setCurrentUser(confirmedUser);
+          refreshData(confirmedUser);
+          setIsAuthModalOpen(false);
+          // Clean up URL parameters
+          window.history.replaceState(null, '', window.location.pathname);
+        }
+      }
+    };
+    checkEmailConfirmation();
+
+    // Supabase auth state change listener (auto signs in on email click)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+        const confirmedUser = await ApiService.syncConfirmedAuthSession();
+        if (confirmedUser) {
+          setCurrentUser(confirmedUser);
+          refreshData(confirmedUser);
+          setIsAuthModalOpen(false);
+        }
+      }
+    });
+
     // Theme initialization
     ThemeService.init();
     const savedTheme = localStorage.getItem('vm_theme') || 'light';
@@ -93,6 +144,10 @@ export function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Handle User change (Login, Switch User, Logout)
@@ -103,6 +158,22 @@ export function App() {
     if (activeTab === 'users' && (!newUser || newUser.role !== 'admin')) {
       setActiveTab('decks');
     }
+  };
+
+  // Handle saving topics from TopicSelectionModal
+  const handleSaveTopicSelection = (newSelectedIds: string[]) => {
+    setSelectedDeckIds(newSelectedIds);
+    StorageService.saveSelectedDeckIds(newSelectedIds, currentUser?.id);
+    setIsFirstTimeOnboarding(false);
+  };
+
+  // Quick toggle a deck in or out of selected topics
+  const handleToggleDeckSelection = (deckId: string) => {
+    const updated = selectedDeckIds.includes(deckId)
+      ? selectedDeckIds.filter(id => id !== deckId)
+      : [...selectedDeckIds, deckId];
+    setSelectedDeckIds(updated);
+    StorageService.saveSelectedDeckIds(updated, currentUser?.id);
   };
 
   const handleToggleTheme = () => {
@@ -281,6 +352,7 @@ export function App() {
             decks={decks}
             cards={cards}
             stats={stats}
+            selectedDeckIds={selectedDeckIds}
             onSelectDeck={handleSelectDeck}
             onStudyDeck={handleStartStudy}
             onCreateDeck={() => {
@@ -297,6 +369,11 @@ export function App() {
               setIsDeckModalOpen(true);
             }}
             onDeleteDeck={handleDeleteDeck}
+            onOpenTopicModal={() => {
+              setIsFirstTimeOnboarding(false);
+              setIsTopicModalOpen(true);
+            }}
+            onToggleDeckSelection={handleToggleDeckSelection}
           />
         )}
 
@@ -513,6 +590,15 @@ export function App() {
         decks={decks}
         cards={cards}
         onDataChanged={() => refreshData(currentUser)}
+      />
+
+      <TopicSelectionModal
+        isOpen={isTopicModalOpen}
+        onClose={() => setIsTopicModalOpen(false)}
+        allDecks={decks}
+        currentSelectedDeckIds={selectedDeckIds}
+        onSaveSelection={handleSaveTopicSelection}
+        isFirstTimeOnboarding={isFirstTimeOnboarding}
       />
 
     </div>

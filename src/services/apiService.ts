@@ -1,15 +1,30 @@
 import type { Card, Deck, UserStats, Achievement } from '../types/flashcard';
 import type { User, UserRole } from '../types/auth';
-import { supabase } from './supabaseClient';
+import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { StorageService } from './storageService';
 import { AuthService } from './authService';
+
+const withTimeout = async <T = any>(promise: Promise<T> | any, ms = 2000): Promise<T> => {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => setTimeout(() => reject(new Error('Network timeout')), ms))
+  ]);
+};
 
 export class ApiService {
   private static isCloudConnected = false;
 
   public static async checkHealth(): Promise<boolean> {
+    if (!isSupabaseConfigured) {
+      this.isCloudConnected = false;
+      return false;
+    }
+
     try {
-      const { data, error } = await supabase.from('decks').select('id').limit(1);
+      const { data, error } = await withTimeout(
+        supabase.from('decks').select('id').limit(1) as any,
+        1500
+      );
       if (!error && Array.isArray(data)) {
         this.isCloudConnected = true;
         return true;
@@ -27,41 +42,241 @@ export class ApiService {
 
   // ================= AUTH =================
   public static async login(username: string, password?: string): Promise<{ success: boolean; message: string; user?: User }> {
+    // 1. Instant local verification if user exists locally
+    const localUsers = AuthService.getAllUsers();
+    const clean = username.trim().toLowerCase();
+    const localUser = localUsers.find(u => u.username.toLowerCase() === clean || u.email.toLowerCase() === clean);
+
+    if (localUser && (!localUser.password || !password || localUser.password === password)) {
+      if (!localUser.isActive) {
+        return { success: false, message: 'Tài khoản đã bị tạm khóa. Vui lòng liên hệ Quản trị viên.' };
+      }
+      AuthService.setCurrentUser(localUser);
+      return { success: true, message: `Đăng nhập thành công với tài khoản ${localUser.fullName}!`, user: localUser };
+    }
+
+    // 2. If not local or cloud sync needed, query Supabase with fast 2s timeout
+    if (isSupabaseConfigured) {
+      try {
+        const queryPromise = supabase
+          .from('users')
+          .select('*')
+          .or(`username.ilike.${clean},email.ilike.${clean}`);
+
+        const { data: users, error } = await withTimeout(queryPromise as any, 2000);
+
+        if (!error && users && users.length > 0) {
+          const u = users[0];
+          if (!u.is_active) {
+            return { success: false, message: 'Tài khoản đã bị tạm khóa. Vui lòng liên hệ Quản trị viên.' };
+          }
+          if (password && u.password && u.password !== password) {
+            return { success: false, message: 'Mật khẩu không chính xác.' };
+          }
+
+          const formattedUser: User = {
+            id: u.id,
+            username: u.username,
+            fullName: u.full_name,
+            email: u.email,
+            role: u.role as UserRole,
+            avatar: u.avatar,
+            createdAt: u.created_at,
+            isActive: Boolean(u.is_active),
+          };
+
+          this.isCloudConnected = true;
+          AuthService.setCurrentUser(formattedUser);
+          return { success: true, message: `Đăng nhập thành công với tài khoản ${formattedUser.fullName}!`, user: formattedUser };
+        }
+      } catch {
+        // Fallback to local auth
+      }
+    }
+
+    return AuthService.login(username, password);
+  }
+
+  // ================= 1-CLICK EMAIL CONFIRMATION REGISTRATION =================
+  public static async sendRegistrationConfirmationLink(
+    username: string,
+    fullName: string,
+    email: string,
+    password?: string
+  ): Promise<{ success: boolean; message: string; requiresEmailCheck?: boolean; user?: User }> {
     try {
-      const clean = username.trim().toLowerCase();
-      const { data: users, error } = await supabase
+      const cleanUsername = username.trim().toLowerCase();
+      const cleanEmail = email.trim().toLowerCase();
+
+      if (!cleanUsername || !fullName.trim() || !cleanEmail) {
+        return { success: false, message: 'Vui lòng điền đầy đủ Tên đăng nhập, Họ tên và Email.' };
+      }
+
+      if (cleanUsername === 'admin') {
+        return { success: false, message: 'Tên đăng nhập này là tài khoản Quản trị hệ thống, không thể đăng ký.' };
+      }
+
+      // 1. Check duplicate username/email
+      if (isSupabaseConfigured) {
+        const { data: existing } = await supabase
+          .from('users')
+          .select('id')
+          .or(`username.ilike.${cleanUsername},email.ilike.${cleanEmail}`);
+
+        if (existing && existing.length > 0) {
+          return { success: false, message: 'Tên đăng nhập hoặc Email này đã tồn tại trên hệ thống.' };
+        }
+
+        // Save pending metadata locally so we can construct the profile upon email click
+        localStorage.setItem('vm_pending_signup', JSON.stringify({
+          username: cleanUsername,
+          fullName: fullName.trim(),
+          email: cleanEmail,
+          password: password || '123456',
+        }));
+
+        // 2. Trigger Supabase Auth SignUp with 1-Click Link
+        const redirectUrl = window.location.origin;
+        const { error: signUpError } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password: password || '123456',
+          options: {
+            emailRedirectTo: redirectUrl,
+            data: {
+              username: cleanUsername,
+              full_name: fullName.trim(),
+            }
+          }
+        });
+
+        if (signUpError) {
+          return { success: false, message: `Lỗi gửi thư: ${signUpError.message}` };
+        }
+
+        // Always require email confirmation link click
+        return {
+          success: true,
+          message: `Chúng tôi đã gửi thư xác nhận đến ${cleanEmail}!`,
+          requiresEmailCheck: true,
+        };
+      }
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Không thể kết nối đến máy chủ gửi email.' };
+    }
+
+    // Fallback to direct local registration
+    return this.register(username, fullName, email, password);
+  }
+
+  // Check and sync user if landed back from email confirmation link
+  public static async syncConfirmedAuthSession(): Promise<User | null> {
+    if (!isSupabaseConfigured) return null;
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session || !session.user) return null;
+
+      const authUser = session.user;
+      const userId = authUser.id;
+
+      // Check if user record already exists in public.users
+      const { data: existingUser } = await supabase
         .from('users')
         .select('*')
-        .or(`username.ilike.${clean},email.ilike.${clean}`);
+        .eq('id', userId)
+        .single();
 
-      if (!error && users && users.length > 0) {
-        const u = users[0];
-        if (!u.is_active) {
-          return { success: false, message: 'Tài khoản đã bị tạm khóa. Vui lòng liên hệ Quản trị viên.' };
-        }
-        if (password && u.password && u.password !== password) {
-          return { success: false, message: 'Mật khẩu không chính xác.' };
-        }
-
+      if (existingUser) {
         const formattedUser: User = {
-          id: u.id,
-          username: u.username,
-          fullName: u.full_name,
-          email: u.email,
-          role: u.role as UserRole,
-          avatar: u.avatar,
-          createdAt: u.created_at,
-          isActive: Boolean(u.is_active),
+          id: existingUser.id,
+          username: existingUser.username,
+          fullName: existingUser.full_name,
+          email: existingUser.email,
+          role: existingUser.role as UserRole,
+          avatar: existingUser.avatar || '🎒',
+          createdAt: existingUser.created_at,
+          isActive: Boolean(existingUser.is_active),
         };
-
-        this.isCloudConnected = true;
         AuthService.setCurrentUser(formattedUser);
-        return { success: true, message: `Đăng nhập thành công với tài khoản ${formattedUser.fullName}!`, user: formattedUser };
+        localStorage.removeItem('vm_pending_signup');
+        return formattedUser;
       }
+
+      // If new confirmed user, get metadata and create records
+      const pendingRaw = localStorage.getItem('vm_pending_signup');
+      const pending = pendingRaw ? JSON.parse(pendingRaw) : null;
+
+      const username = pending?.username || authUser.user_metadata?.username || authUser.email?.split('@')[0] || `user_${userId.slice(0, 5)}`;
+      const fullName = pending?.fullName || authUser.user_metadata?.full_name || username;
+      const email = authUser.email || pending?.email || '';
+      const now = new Date().toISOString();
+
+      await supabase.from('users').upsert({
+        id: userId,
+        username,
+        full_name: fullName,
+        email,
+        role: 'student',
+        avatar: '🎒',
+        password: pending?.password || '123456',
+        is_active: true,
+        created_at: now,
+      });
+
+      await supabase.from('user_stats').upsert({
+        user_id: userId,
+        xp: 0,
+        level: 1,
+        streak: 1,
+        last_study_date: now.split('T')[0],
+        daily_goal: 10,
+        studied_today: 0,
+        total_cards_reviewed: 0,
+        total_cards_mastered: 0,
+        perfect_quizzes: 0,
+      });
+
+      const newUser: User = {
+        id: userId,
+        username,
+        fullName,
+        email,
+        role: 'student',
+        avatar: '🎒',
+        createdAt: now,
+        isActive: true,
+      };
+
+      AuthService.setCurrentUser(newUser);
+      localStorage.removeItem('vm_pending_signup');
+      return newUser;
     } catch {
-      // Fallback
+      return null;
     }
-    return AuthService.login(username, password);
+  }
+
+  public static async resendRegistrationConfirmationLink(email: string): Promise<{ success: boolean; message: string }> {
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      if (isSupabaseConfigured) {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: cleanEmail,
+          options: {
+            emailRedirectTo: window.location.origin,
+          }
+        });
+
+        if (error) {
+          return { success: false, message: `Lỗi gửi lại thư: ${error.message}` };
+        }
+
+        return { success: true, message: `Đã gửi lại email xác nhận mới tới ${cleanEmail}!` };
+      }
+    } catch (err: any) {
+      return { success: false, message: err?.message || 'Không thể gửi lại email.' };
+    }
+    return { success: false, message: 'Dịch vụ xác thực không khả dụng.' };
   }
 
   public static async register(

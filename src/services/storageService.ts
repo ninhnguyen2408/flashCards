@@ -55,6 +55,27 @@ export class StorageService {
     localStorage.setItem(`vm_user_${uid}_decks`, JSON.stringify(decks));
   }
 
+  // Selected Topic IDs for personalized learning
+  public static getSelectedDeckIds(userId?: string): string[] | null {
+    try {
+      const uid = this.getActiveUserId(userId);
+      const data = localStorage.getItem(`vm_user_${uid}_selected_decks`);
+      if (data === null) return null; // Null indicates user has not completed onboarding
+      return JSON.parse(data);
+    } catch {
+      return null;
+    }
+  }
+
+  public static saveSelectedDeckIds(deckIds: string[], userId?: string): void {
+    const uid = this.getActiveUserId(userId);
+    localStorage.setItem(`vm_user_${uid}_selected_decks`, JSON.stringify(deckIds));
+    // Also sync to UserStats in local
+    const stats = this.getStats(uid);
+    stats.selectedDeckIds = deckIds;
+    this.saveStats(stats, uid);
+  }
+
   // Load Cards for specific user
   public static getCards(userId?: string): Card[] {
     try {

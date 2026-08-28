@@ -81,6 +81,7 @@ export interface UserStats {
   theme: 'light' | 'dark' | 'system';
   voiceAccent: 'en-US' | 'en-GB';
   voiceSpeed: number; // 0.75, 1, 1.25
+  selectedDeckIds?: string[];
 }
 
 export interface Achievement {
